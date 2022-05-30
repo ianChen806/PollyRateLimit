@@ -14,8 +14,11 @@ public class WeatherForecastController : ControllerBase
 
     private readonly ILogger<WeatherForecastController> _logger;
 
-    private static readonly Policy<IEnumerable<WeatherForecast>>? WithPolicyKey =
-        Policy.RateLimit<IEnumerable<WeatherForecast>>(1, TimeSpan.FromMinutes(1))
+    /// <summary>
+    /// 因為policy的關係, 多個請求需要共用資源, 用key分類限制
+    /// </summary>
+    private static readonly Policy<IEnumerable<WeatherForecast>>? Policy =
+        Polly.Policy.RateLimit<IEnumerable<WeatherForecast>>(1, TimeSpan.FromMinutes(1))
             .WithPolicyKey("key");
 
     public WeatherForecastController(ILogger<WeatherForecastController> logger)
@@ -26,7 +29,7 @@ public class WeatherForecastController : ControllerBase
     [HttpGet(Name = "GetWeatherForecast")]
     public IEnumerable<WeatherForecast> Get()
     {
-        return WithPolicyKey!.Execute(() => WeatherForecasts());
+        return Policy!.Execute(() => WeatherForecasts());
     }
 
     private static WeatherForecast[] WeatherForecasts()
